@@ -85,6 +85,7 @@
     // Custom Globals
     "globals"       : {
         "expect": false,
-        "testConfig": true
+        "testConfig": true,
+        "Promise": false
     }
 }

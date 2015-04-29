@@ -10,15 +10,16 @@
 
   var XMLHttpRequest, FormData;
 
-  if (typeof exports !== 'undefined') {
+  require('es6-promise').polyfill();
+
+  if (typeof window !== 'undefined') {
+    XMLHttpRequest = window.XMLHttpRequest;
+    FormData = window.FormData;
+  } else {
     XMLHttpRequest = require('xmlhttprequest').XMLHttpRequest;
     FormData = require('form-data');
   }
 
-  if (typeof window !== 'undefined' && typeof window.XMLHttpRequest !== 'undefined') {
-    XMLHttpRequest = window.XMLHttpRequest;
-    FormData = window.FormData;
-  }
 
   var IndiciaMobile = function(options) {
     this.baseUrl = options.baseUrl;
@@ -44,7 +45,7 @@
   }
 
 
-  IndiciaMobile.prototype._request = function(path, data, cb) {
+  IndiciaMobile.prototype._request = function(path, data) {
 
     var url = path.indexOf('//') >= 0 ? path : this.baseUrl + path;
     url = url + ((/\?/).test(url) ? '&' : '?') + (new Date()).getTime();
@@ -59,55 +60,67 @@
     form.append('appname', this.appname);
     form.append('appsecret', this.appsecret);
 
-    if (typeof exports !== 'undefined') {
-      form.submit(url, function(err, response) {
-        if (err) {
-          return cb(err);
-        }
-        var body = '';
-        response.on('data', function(chunk) {
-          body += chunk;
-        });
-        response.on('end', function() {
-          cb(null, body, response);
+    if (typeof window === 'undefined') {
+      return new Promise(function(resolve, reject) {
+
+        form.submit(url, function(err, response) {
+          if (err) {
+            return reject(Error(err));
+          }
+
+          var body = '';
+          response.on('data', function(chunk) {
+            body += chunk;
+          });
+          response.on('end', function() {
+            if (response.statusCode >= 200 && response.statusCode < 300) {
+              resolve({
+                body: body,
+                response: response
+              });
+            } else {
+              reject(Error(body));
+            }
+          });
         });
       });
     } else {
-      var xhr = new XMLHttpRequest();
-      xhr.open('POST', url);
-      xhr.onreadystatechange = function() {
-        if (this.readyState === 4) {
-          if (this.status >= 200 && this.status < 300) {
-            cb(null, this.responseText, this);
-          } else {
-            cb(this.status);
-          }
-        }
-      };
-      xhr.send(form);
-    }
 
+      return new Promise(function(resolve, reject) {
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', url);
+        xhr.onreadystatechange = function() {
+          if (this.readyState === 4) {
+            if (this.status >= 200 && this.status < 300) {
+              resolve({
+                body: this.responseText,
+                response: this
+              });
+            } else {
+              reject(this.status);
+            }
+          }
+        };
+        xhr.send(form);
+      });
+    }
   };
 
-  IndiciaMobile.prototype.login = function(email, password, cb) {
+  IndiciaMobile.prototype.login = function(email, password) {
     var self = this;
-    this._request('/user/mobile/register', {
-      email: email,
-      password: password
-    }, function(err, response) {
-      if (err) {
-        return cb(err);
-      } else {
-        response = parseLoginResponse(response);
+    return this._request('/user/mobile/register', {
+        email: email,
+        password: password
+      })
+      .then(function(response) {
+        response = parseLoginResponse(response.body);
         // Store the details
         self.credentials = {
           email: email,
           usersecret: response.usersecret
         };
-
-        return cb(null, response);
-      }
-    });
+        return self.credentials;
+      });
   };
 
   /**
@@ -138,59 +151,54 @@
    * @param  {String}   options.password Password
    * @param  {Function} cb      Callback
    */
-  IndiciaMobile.prototype.register = function(options, cb) {
+  IndiciaMobile.prototype.register = function(options) {
     var self = this;
-    this._request('/user/mobile/register', options, function(err, response) {
-      if (err) {
-        cb(err);
-      } else {
-        response = parseLoginResponse(response);
+    this._request('/user/mobile/register', options)
+      .then(function(response) {
+        response = parseLoginResponse(response.body);
         // Store the details
         self.credentials = {
           email: options.email,
           usersecret: response.usersecret
         };
-        cb(null, response);
-      }
-    });
+        return self.credentials;
+      });
   };
 
   /**
    * report
    */
-  IndiciaMobile.prototype.report = function(options, cb) {
+  IndiciaMobile.prototype.report = function(options) {
     options = options || {};
 
-    if(!this.isLoggedIn()){
-      return cb("Must be logged in");
+    if (!this.isLoggedIn()) {
+      return Promise.reject(Error("Must be logged in"));
     }
 
-    this._request('/mobile/report', {
-      email: this.credentials.email,
-      usersecret: this.credentials.usersecret,
-      report: options.report || 'library/totals/user_survey_contribution_summary.xml',
-      survey_id: options.survey_id
-    }, function(err, response) {
-      if (err) {
-        return cb(err);
-      } else {
-        return cb(null, JSON.parse(response));
-      }
-    });
+    return this._request('/mobile/report', {
+        email: this.credentials.email,
+        usersecret: this.credentials.usersecret,
+        report: options.report || 'library/totals/user_survey_contribution_summary.xml',
+        survey_id: options.survey_id
+      })
+      .then(function(response) {
+        return JSON.parse(response.body);
+      });
   };
 
   /**
    * Submit
    */
-  IndiciaMobile.prototype.submit = function(options, cb) {
+  IndiciaMobile.prototype.submit = function(options) {
 
-    if(!this.isLoggedIn()){
-      return cb("Must be logged in");
+    if (!this.isLoggedIn()) {
+      return Promise.reject(Error("Must be logged in"));
     }
 
-    this._request('/mobile/submit', options, function(err, body, response) {
-      cb(err, body, response);
-    });
+    return this._request('/mobile/submit', options)
+      .then(function(response) {
+        return response.body;
+      });
   };
 
 
