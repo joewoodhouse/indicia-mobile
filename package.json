@@ -4,6 +4,7 @@
   "description": "A client library for the Indicia Mobile Auth module, for browsers and node.",
   "main": "indicia-mobile.js",
   "dependencies": {
+    "form-data": "^0.2.0",
     "xmlhttprequest": "~1.6.0"
   },
   "devDependencies": {
