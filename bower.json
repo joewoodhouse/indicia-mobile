@@ -1,0 +1,25 @@
+{
+  "name": "indicia-mobile",
+  "main": "indicia-mobile.js",
+  "version": "0.0.1",
+  "homepage": "https://github.com/joewoodhouse/indicia-mobile",
+  "authors": [
+    "Joe Woodhouse <joewoodhouse30@gmail.com>"
+  ],
+  "description": "A client library for Indicia Mobile Auth module, intended for browsers and node.",
+  "moduleType": [
+    "globals"
+  ],
+  "keywords": [
+    "indicia",
+    "api"
+  ],
+  "license": "BSD",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}

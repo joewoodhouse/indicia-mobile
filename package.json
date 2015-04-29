@@ -1,0 +1,37 @@
+{
+  "name": "indicia-mobile",
+  "version": "0.0.1",
+  "description": "A client library for the Indicia Mobile Auth module, for browsers and node.",
+  "main": "indicia-mobile.js",
+  "dependencies": {
+    "xmlhttprequest": "~1.6.0"
+  },
+  "devDependencies": {
+    "chai": "^2.3.0",
+    "jshint": "^2.5.8",
+    "mocha": "^2.2.4"
+  },
+  "scripts": {
+    "test": "node node_modules/mocha/bin/mocha --timeout 5000 tests/bootstrap.js tests/*.spec.js  && node node_modules/jshint/bin/jshint indicia-mobile.js tests/*.js",
+    "jshint": "node node_modules/jshint/bin/jshint indicia-mobile.js tests/*.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/michael/github.git"
+  },
+  "keywords": [
+    "indicia",
+    "api"
+  ],
+  "contributors": [
+    "Joe Woodhouse <joewoodhouse30@gmail.com>"
+  ],
+  "license": "BSD",
+  "readmeFilename": "README.md",
+  "bugs": {
+    "url": "https://github.com/joewoodhouse/indicia-mobile/issues"
+  },
+  "browser": {
+    "xmlhttprequest": false
+  }
+}
