@@ -18,7 +18,13 @@ var client = new IndiciaMobile({
 client.login({
   email: 'YOUR_EMAIL',
   password: 'YOUR_PASSWORD'
-});
+})
+.then(function(user){
+
+})
+.catch(err){
+
+}
 
 ```
 ## Testing
@@ -35,7 +41,8 @@ Currently the tests run against a live instance of Indicia - unit tests will fol
     "email": "your_username",
     "password": "your_password"
   },
-  "survey_id": "a_survey_id"
+  "survey_id": "your_survey_id",
+  "website_id": "your_website_id"
 }
 
 ```
