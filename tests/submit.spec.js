@@ -9,14 +9,16 @@ describe("Indicia Mobile: Submit Record", function() {
   });
 
   describe("#submit()", function() {
-    it.only("should work", function(done) {
+    it("should work", function(done) {
       client.submit({
-        website_id: 17,
+        website_id: testConfig.website_id,
         appname: testConfig.app.appname,
         appsecret: testConfig.app.appsecret,
-        survey_id: 23
+        survey_id: testConfig.survey_id
       }, function(err, body, response) {
-        console.log(err,body,response.statusCode);
+        expect(err).to.not.exist;
+        expect(body).to.exist;
+        expect(response).to.exist;
         done();
       });
     });

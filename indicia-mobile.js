@@ -24,6 +24,10 @@
     this.baseUrl = options.baseUrl;
     this.appname = options.appname;
     this.appsecret = options.appsecret;
+    this.credentials = {
+      usersecret: options.usersecret || null,
+      email: options.email || null
+    };
   };
 
   function parseLoginResponse(str) {
@@ -111,7 +115,10 @@
    * Does not send anything to the server just resets our credentials
    */
   IndiciaMobile.prototype.logout = function() {
-    this.credentials = null;
+    this.credentials = {
+      usersecret: null,
+      email: null
+    };
   };
 
   /**
@@ -119,7 +126,7 @@
    * @return {Boolean} Whether we are logged in or not
    */
   IndiciaMobile.prototype.isLoggedIn = function() {
-    return !!this.credentials;
+    return !!this.credentials.usersecret;
   };
 
   /**
