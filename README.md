@@ -1,7 +1,7 @@
 # Indicia Mobile
 
 A client library for the Indicia Mobile Authentication module, targetted for
-browsers and Node.js
+browsers.
 
 ## Installation
 
