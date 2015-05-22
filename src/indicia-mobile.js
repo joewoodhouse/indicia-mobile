@@ -132,7 +132,7 @@
    */
   IndiciaMobile.prototype.register = function(options) {
     var self = this;
-    this._request('/user/mobile/register', options)
+    return this._request('/user/mobile/register', options)
       .then(function(response) {
         response = parseLoginResponse(response.body);
         // Store the details
@@ -255,7 +255,6 @@
    */
   IndiciaMobile.Occurrence = function(options) {
     this.fields = extend({
-      taxa_taxon_list_id: null
     },options || {});
   };
 
