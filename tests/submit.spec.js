@@ -1,5 +1,4 @@
 'use strict';
-var IndiciaMobile = require('../indicia-mobile');
 
 describe("Indicia Mobile: Submit Record", function() {
   var client;

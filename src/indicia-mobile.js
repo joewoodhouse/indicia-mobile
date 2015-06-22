@@ -8,9 +8,9 @@
 (function() {
   'use strict';
 
-  function extend(dst,obj){
-    for(var i in obj){
-      if(obj.hasOwnProperty(i)){
+  function extend(dst, obj) {
+    for (var i in obj) {
+      if (obj.hasOwnProperty(i)) {
         dst[i] = obj[i];
       }
     }
@@ -23,11 +23,73 @@
     this.appsecret = options.appsecret;
     this.website_id = options.website_id;
     this.survey_id = options.survey_id;
+    this.useRegistrationEndpoint = false;
+
+    if (options.hasOwnProperty('useRegistrationEndpoint')) {
+      this.useRegistrationEndpoint = options.useRegistrationEndpoint;
+    }
 
     this.credentials = {
       usersecret: options.usersecret || null,
       email: options.email || null
     };
+  };
+
+  IndiciaMobile.prototype.on =
+    IndiciaMobile.prototype.addEventListener = function(event, fn) {
+      this._callbacks = this._callbacks || {};
+      (this._callbacks['$' + event] = this._callbacks['$' + event] || [])
+      .push(fn);
+      return this;
+    };
+
+  IndiciaMobile.prototype.off =
+    IndiciaMobile.prototype.removeListener =
+    IndiciaMobile.prototype.removeAllListeners =
+    IndiciaMobile.prototype.removeEventListener = function(event, fn) {
+      this._callbacks = this._callbacks || {};
+
+      // all
+      if (0 === arguments.length) {
+        this._callbacks = {};
+        return this;
+      }
+
+      // specific event
+      var callbacks = this._callbacks['$' + event];
+      if (!callbacks) return this;
+
+      // remove all handlers
+      if (1 === arguments.length) {
+        delete this._callbacks['$' + event];
+        return this;
+      }
+
+      // remove specific handler
+      var cb;
+      for (var i = 0; i < callbacks.length; i++) {
+        cb = callbacks[i];
+        if (cb === fn || cb.fn === fn) {
+          callbacks.splice(i, 1);
+          break;
+        }
+      }
+      return this;
+    };
+
+  IndiciaMobile.prototype.emit = function(event) {
+    this._callbacks = this._callbacks || {};
+    var args = [].slice.call(arguments, 1),
+      callbacks = this._callbacks['$' + event];
+
+    if (callbacks) {
+      callbacks = callbacks.slice(0);
+      for (var i = 0, len = callbacks.length; i < len; ++i) {
+        callbacks[i].apply(this, args);
+      }
+    }
+
+    return this;
   };
 
   function parseLoginResponse(str) {
@@ -44,7 +106,7 @@
   }
 
 
-  IndiciaMobile.prototype._request = function(path, data, uploads) {
+  IndiciaMobile.prototype._request = function(path, data) {
 
     var url = path.indexOf('//') >= 0 ? path : this.base_url + path;
     url = url + ((/\?/).test(url) ? '&' : '?') + (new Date()).getTime();
@@ -53,18 +115,17 @@
 
     for (var i in data) {
       if (data.hasOwnProperty(i)) {
-        form.append(i, data[i]);
+
+        // If it is an object, assume it is an upload
+        if (typeof data[i] === 'object' && data[i] !== null) {
+          form.append(i, data[i].data, data[i].filename);
+        } else {
+          form.append(i, data[i]);
+        }
       }
     }
     form.append('appname', this.appname);
     form.append('appsecret', this.appsecret);
-
-    if(uploads){
-      for(var j = 0; j < uploads.length; j++){
-        var upload = uploads[j];
-        form.append(upload.name,upload.data,upload.filename);
-      }
-    }
 
     return new Promise(function(resolve, reject) {
       var xhr = new XMLHttpRequest();
@@ -87,7 +148,8 @@
 
   IndiciaMobile.prototype.login = function(email, password) {
     var self = this;
-    return this._request('/user/mobile/register', {
+    var path = this.useRegistrationEndpoint ? '/user/mobile/register' : '/user/mobile/login';
+    return this._request(path, {
         email: email,
         password: password
       })
@@ -98,6 +160,7 @@
           email: email,
           usersecret: response.usersecret
         };
+        self.emit('login',self.credentials);
         return self.credentials;
       });
   };
@@ -111,6 +174,7 @@
       usersecret: null,
       email: null
     };
+    this.emit('logout');
   };
 
   /**
@@ -126,13 +190,15 @@
    * @param  {Object}   options All fields required
    * @param  {String}   options.email Email Address
    * @param  {String}   options.firstname First Name
-   * @param  {String}   options.lastname Last Name
+   * @param  {String}   options.secondname Last Name
    * @param  {String}   options.password Password
    * @param  {Function} cb      Callback
    */
   IndiciaMobile.prototype.register = function(options) {
     var self = this;
-    return this._request('/user/mobile/register', options)
+    var path = this.useRegistrationEndpoint ? '/user/mobile/register' : '/user/mobile/signup';
+
+    return this._request(path, options)
       .then(function(response) {
         response = parseLoginResponse(response.body);
         // Store the details
@@ -168,11 +234,11 @@
   /**
    * Submit
    */
-  IndiciaMobile.prototype.submit = function(sample,options) {
+  IndiciaMobile.prototype.submit = function(sample, options) {
 
     options = extend({
       authenticated: true,
-    },options || {});
+    }, options || {});
 
     // Start with the basic system level params
     var submission = {
@@ -186,12 +252,12 @@
       return Promise.reject(Error("Must be logged in"));
     }
 
-    if(options.authenticated){
+    if (options.authenticated) {
       submission.email = this.credentials.email;
       submission.usersecret = this.credentials.usersecret;
     }
 
-    extend(submission,sample.encode());
+    extend(submission, sample.encode());
 
     return this._request('/mobile/submit', submission, sample.uploads)
       .then(function(response) {
@@ -217,13 +283,11 @@
       entered_sref_system: null,
       date: null,
       comment: null
-    },options || {});
-
+    }, options || {});
     this.occurrences = [];
-    this.uploads = [];
   };
 
-  IndiciaMobile.Sample.prototype.set = function(key,value){
+  IndiciaMobile.Sample.prototype.set = function(key, value) {
     this.fields[key] = value;
     return this;
   };
@@ -231,20 +295,20 @@
   IndiciaMobile.Sample.prototype.encode = function() {
     var result = {};
 
-    for(var f in this.fields){
-      if(this.fields.hasOwnProperty(f)){
-        result['sample:'+f] = this.fields[f];
+    for (var f in this.fields) {
+      if (this.fields.hasOwnProperty(f)) {
+        result['sample:' + f] = this.fields[f];
       }
     }
 
     for (var i = 0; i < this.occurrences.length; i++) {
-      extend(result,this.occurrences[i].encode(i+1));
+      extend(result, this.occurrences[i].encode(i + 1));
     }
 
     return result;
   };
 
-  IndiciaMobile.Sample.prototype.addOccurrence = function(options){
+  IndiciaMobile.Sample.prototype.addOccurrence = function(options) {
     var occ = new IndiciaMobile.Occurrence(options);
     this.occurrences.push(occ);
     return occ;
@@ -254,20 +318,19 @@
    * Occurrence
    */
   IndiciaMobile.Occurrence = function(options) {
-    this.fields = extend({
-    },options || {});
+    this.fields = extend({}, options || {});
   };
 
-  IndiciaMobile.Occurrence.prototype.set = function(key,value){
+  IndiciaMobile.Occurrence.prototype.set = function(key, value) {
     this.fields[key] = value;
     return this;
   };
 
-  IndiciaMobile.Occurrence.prototype.encode = function(idx){
+  IndiciaMobile.Occurrence.prototype.encode = function(idx) {
     var result = {};
-    for(var f in this.fields){
-      if(this.fields.hasOwnProperty(f)){
-        result['sc:'+idx+'::'+f] = this.fields[f];
+    for (var f in this.fields) {
+      if (this.fields.hasOwnProperty(f)) {
+        result['sc:' + idx + '::' + f] = this.fields[f];
       }
     }
     return result;
