@@ -1187,18 +1187,18 @@
    * report
    */
   IndiciaMobile.prototype.report = function(options) {
-    options = options || {};
+    options = extend({
+      email: this.credentials.email,
+      usersecret: this.credentials.usersecret,
+      report: 'library/totals/user_survey_contribution_summary.xml',
+      survey_id: this.survey_id
+    },options || {});
 
     if (!this.isLoggedIn()) {
       return Promise.reject(Error("Must be logged in"));
     }
 
-    return this._request('/mobile/report', {
-        email: this.credentials.email,
-        usersecret: this.credentials.usersecret,
-        report: options.report || 'library/totals/user_survey_contribution_summary.xml',
-        survey_id: options.survey_id || this.survey_id
-      })
+    return this._request('/mobile/report', options)
       .then(function(response) {
         return JSON.parse(response.body);
       });
