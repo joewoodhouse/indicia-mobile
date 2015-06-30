@@ -1175,11 +1175,12 @@
       .then(function(response) {
         response = parseLoginResponse(response.body);
         // Store the details
-        self.credentials = {
-          email: options.email,
-          usersecret: response.usersecret
-        };
-        return self.credentials;
+        //self.credentials = {
+        //  email: options.email,
+        //  usersecret: response.usersecret
+        //};
+        return response.body;
+        //return self.credentials;
       });
   };
 
