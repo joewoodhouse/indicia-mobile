@@ -1118,6 +1118,8 @@
           }
         }
       };
+      xhr.setRequestHeader('Cache-Control', 'no-cache');
+      xhr.withCredentials = false;
       xhr.send(form);
     });
   };
