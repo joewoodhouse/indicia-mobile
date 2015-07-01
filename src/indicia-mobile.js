@@ -138,7 +138,10 @@
               response: this
             });
           } else {
-            reject(this.status);
+            reject({
+              status: this.status,
+              error: this.responseText
+            });
           }
         }
       };
