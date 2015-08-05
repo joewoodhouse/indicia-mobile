@@ -1260,8 +1260,7 @@
     this.fields = extend({
       entered_sref: null,
       entered_sref_system: null,
-      date: null,
-      comment: null
+      date: null
     }, options || {});
     this.occurrences = [];
   };
